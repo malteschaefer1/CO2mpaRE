@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 
 BASE_URL = "https://api.co2-monitor.org/"
-API_KEY = "w0lPQjP05y1W5wOz0TsIj9f3zxHr9qt18rN8Cfqc"
+API_KEY = ""
 
 def check_api_health():
     """Check if the API is healthy."""
