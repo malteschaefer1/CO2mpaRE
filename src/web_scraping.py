@@ -1,25 +1,51 @@
 # src/web_scraping.py
 
 import requests
-import pandas as pd
 from datetime import datetime
-import tkinter as tk
-from tkinter import filedialog, messagebox
-import matplotlib.pyplot as plt
 
-def get_co2_intensity(start_date, end_date, dataset='expost', scope='2', region='DE'):
-    # Base URL of the CO2 Monitor API
-    base_url = "https://co2-monitor.org/api/private"
-    
-    # Your API key
-    api_key = "w0lPQjP05y1W5wOz0TsIj9f3zxHr9qt18rN8Cfqc"
-    
-    # Headers for the request
+BASE_URL = "https://api.co2-monitor.org/"
+API_KEY = "w0lPQjP05y1W5wOz0TsIj9f3zxHr9qt18rN8Cfqc"
+
+def check_api_health():
+    """Check if the API is healthy."""
+    try:
+        response = requests.get(BASE_URL)
+        response.raise_for_status()
+        data = response.json()
+        if 'message' in data:
+            return True
+        else:
+            return False
+    except requests.exceptions.RequestException as e:
+        print(f"Error checking API health: {e}")
+        return False
+
+def get_expost_latest(region='DE'):
+    """Fetch the latest historic emission factors for Germany."""
+    endpoint = f"{BASE_URL}/public/expost_latest"
     headers = {
-        'Authorization': f'Bearer {api_key}'
+        'Authorization': f'Bearer {API_KEY}',
+        'Accept': 'application/json'
     }
-    
-    # Parameters for the request
+    params = {
+        'region': region
+    }
+    try:
+        response = requests.get(endpoint, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching expost latest data: {e}")
+        return None
+
+def get_co2_intensity(start_date, end_date, dataset='expost', scope='LC', region='DE'):
+    """Fetch CO2 intensity data based on parameters."""
+    endpoint = f"{BASE_URL}/private"
+    headers = {
+        'Authorization': f'Bearer {API_KEY}',
+        'Accept': 'application/json'
+    }
     params = {
         'from_ts': start_date,
         'to_ts': end_date,
@@ -27,15 +53,11 @@ def get_co2_intensity(start_date, end_date, dataset='expost', scope='2', region=
         'dataset': dataset,
         'scope': scope
     }
-    
-    # Make the request
-    response = requests.get(base_url, headers=headers, params=params)
-    
-    # Check if the request was successful
-    if response.status_code == 200:
+    try:
+        response = requests.get(endpoint, headers=headers, params=params)
+        response.raise_for_status()
         data = response.json()
         return data
-    else:
-        print(f"Failed to retrieve data: {response.status_code}, {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching CO2 intensity data: {e}")
         return None
-
