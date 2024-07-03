@@ -1,28 +1,55 @@
 # src/data_processing.py
+# Handle data processing tasks such as sorting, checking for missing data, and handling incorrect data.
 
-def process_co2_data(data):
-    # Assuming the data is in the 'message' field and is a list of dictionaries
-    if 'message' in data:
-        df = pd.DataFrame(data['message'])
-        return df
-    else:
-        print("No data found in the response")
-        return pd.DataFrame()
+import pandas as pd
 
-def display_results(df):
-    if not df.empty:
-        # Simple display of the first few rows
-        print(df.head())
-        
-        # Plotting the data
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
-        plt.figure(figsize=(10, 5))
-        plt.plot(df['timestamp'], df['value'], label='CO2 Intensity')
-        plt.xlabel('Time')
-        plt.ylabel('CO2 Intensity (gCO2/kWh)')
-        plt.title('CO2 Intensity Over Time')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+def inspect_data(data):
+    """Inspect the data, print its structure, and some basic statistics."""
+    print(data.info())
+    print(data.describe())
+    print(data.head())
+
+def sort_data(data, column):
+    """Sort the data by a specific column."""
+    return data.sort_values(by=column)
+
+def check_missing_data(data):
+    """Check for missing data and print the result."""
+    missing_data = data.isnull().sum()
+    print(f"Missing data in each column:\n{missing_data}")
+    return missing_data
+
+def handle_missing_data(data, method='drop', fill_value=None):
+    """
+    Handle missing data in the DataFrame.
+    :param method: 'drop' to drop missing values, 'fill' to fill missing values.
+    :param fill_value: Value to fill missing data if method is 'fill'.
+    """
+    if method == 'drop':
+        return data.dropna()
+    elif method == 'fill':
+        return data.fillna(fill_value)
     else:
-        print("No data to display")
+        raise ValueError("Method must be either 'drop' or 'fill'.")
+
+def check_file_format(data, expected_columns):
+    """Check if the data has the expected format (columns)."""
+    actual_columns = list(data.columns)
+    if actual_columns == expected_columns:
+        print("Data format is correct.")
+        return True
+    else:
+        print(f"Expected columns: {expected_columns}")
+        print(f"Actual columns: {actual_columns}")
+        return False
+
+def process_emission_data(data):
+    """Process the emission data."""
+    df = pd.DataFrame(data['message'])
+    inspect_data(df)
+    df_sorted = sort_data(df, 'timestamp')
+    check_missing_data(df_sorted)
+    df_cleaned = handle_missing_data(df_sorted)
+    expected_columns = ['timestamp', 'value', 'timestamp_readable']
+    check_file_format(df_cleaned, expected_columns)
+    return df_cleaned

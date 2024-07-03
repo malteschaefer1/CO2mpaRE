@@ -1,11 +1,12 @@
 # src/file_handling.py
+# Functions to read from and write to files, including user-uploaded data.
 
 import pandas as pd
 
-def load_data(file_path):
-    if file_path.endswith('.csv'):
-        return pd.read_csv(file_path)
-    elif file_path.endswith('.xlsx'):
-        return pd.read_excel(file_path)
-    # Handle other file types if necessary
-    return None
+def read_csv(file_path):
+    """Read a CSV file and return a DataFrame."""
+    return pd.read_csv(file_path)
+
+def save_to_csv(data, file_path):
+    """Save a DataFrame to a CSV file."""
+    data.to_csv(file_path, index=False)

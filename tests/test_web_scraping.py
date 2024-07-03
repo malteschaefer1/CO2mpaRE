@@ -1,36 +1,40 @@
-# test_web_scraping.py
+# tests/test_web_scraping.py
+# For testing the web scraping functionality
 
 import sys
-sys.path.append('/Users/malteschafer/Documents/GitHub/CO2mpaRE/src')
+import os
+from datetime import datetime, timezone
 
-from web_scraping import check_api_health, get_expost_latest, get_co2_intensity
+# Add the src directory to the system path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-def test_check_api_health():
-    """Test API health endpoint."""
-    assert check_api_health() is True, "API health check failed."
+from web_scraping import get_emission_data, save_emission_data_to_sqlite
 
-def test_get_expost_latest():
-    """Test fetching expost latest data."""
-    region = 'DE'
-    data = get_expost_latest(region=region)
-    assert data is not None, "Failed to fetch expost latest data."
-    print("Expost latest data fetched successfully:")
-    print(data)
+def test_get_emission_data():
+    """Test for fetching emission data."""
+    start_date = "2023-09-01T00:00:00Z"
+    end_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
-def test_get_co2_intensity():
-    """Test fetching CO2 intensity data."""
-    start_date = '2024-07-02T00:00:00Z'
-    end_date = '2024-07-02T01:00:00Z'
-    region = 'DE'
-    dataset = 'expost'
-    scope = 'LC'
-    data = get_co2_intensity(start_date, end_date, dataset=dataset, scope=scope, region=region)
-    assert data is not None, "Failed to fetch CO2 intensity data."
-    print("CO2 intensity data fetched successfully:")
-    print(data)
+    try:
+        emission_data = get_emission_data(start_date, end_date)
+        assert emission_data is not None
+        if 'message' in emission_data and emission_data['message']:
+            # Ensure the data/test directory exists
+            test_data_dir = os.path.join(os.path.dirname(__file__), '..', 'data', 'test')
+            os.makedirs(test_data_dir, exist_ok=True)
+            
+            # Save the emission data to SQLite in the data/test directory
+            sqlite_file_path = os.path.join(test_data_dir, 'test_emission_data.db')
+            save_emission_data_to_sqlite(emission_data, sqlite_file_path)
+            
+            for entry in emission_data['message']:
+                assert 'timestamp' in entry
+                assert 'value' in entry
+        else:
+            assert False, "Emission data is empty."
+    except Exception as e:
+        assert False, f"Error fetching emission data: {e}"
 
 if __name__ == "__main__":
-    # Run tests
-    test_check_api_health()
-    test_get_expost_latest()
-    test_get_co2_intensity()
+    test_get_emission_data()
+    print("All tests passed.")
