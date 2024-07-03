@@ -35,7 +35,7 @@ def handle_missing_data(data, method='drop', fill_value=None):
 def check_file_format(data, expected_columns):
     """Check if the data has the expected format (columns)."""
     actual_columns = list(data.columns)
-    if actual_columns == expected_columns:
+    if set(expected_columns).issubset(set(actual_columns)):
         print("Data format is correct.")
         return True
     else:
@@ -51,5 +51,10 @@ def process_emission_data(data):
     check_missing_data(df_sorted)
     df_cleaned = handle_missing_data(df_sorted)
     expected_columns = ['timestamp', 'value', 'timestamp_readable']
-    check_file_format(df_cleaned, expected_columns)
+    if check_file_format(df_cleaned, expected_columns):
+        df_cleaned = df_cleaned[expected_columns]
+    
+    # Print date range for debugging
+    print(f"Data timestamp range: {df_cleaned['timestamp'].min()} to {df_cleaned['timestamp'].max()}")
+    
     return df_cleaned

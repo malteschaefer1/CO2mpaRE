@@ -42,6 +42,12 @@ def get_emission_data(start_date, end_date, dataset='expost', scope='LC', region
         response = requests.get(endpoint, headers=headers, params=params)
         response.raise_for_status()
         data = response.json()
+        
+        # Print date range of fetched data for debugging
+        if 'message' in data and data['message']:
+            timestamps = [entry['timestamp'] for entry in data['message']]
+            print(f"Fetched data timestamp range: {min(timestamps)} to {max(timestamps)}")
+        
         return data
     except requests.exceptions.HTTPError as http_err:
         print(f"HTTP error occurred: {http_err}")
