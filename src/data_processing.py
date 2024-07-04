@@ -19,18 +19,23 @@ def check_missing_data(data):
     print(f"Missing data in each column:\n{missing_data}")
     return missing_data
 
-def handle_missing_data(data, method='drop', fill_value=None):
+def handle_missing_data(data, method='forward_fill'):
     """
     Handle missing data in the DataFrame.
-    :param method: 'drop' to drop missing values, 'fill' to fill missing values.
-    :param fill_value: Value to fill missing data if method is 'fill'.
+    :param method: 'drop' to drop missing values, 'forward_fill', 'backward_fill', 'average'.
     """
     if method == 'drop':
         return data.dropna()
-    elif method == 'fill':
-        return data.fillna(fill_value)
+    elif method == 'forward_fill':
+        data['value'] = data['value'].ffill()
+    elif method == 'backward_fill':
+        data['value'] = data['value'].bfill()
+    elif method == 'average':
+        avg_value = data['value'].astype(float).mean()
+        data['value'] = data['value'].fillna(avg_value)
     else:
-        raise ValueError("Method must be either 'drop' or 'fill'.")
+        raise ValueError("Method must be either 'drop', 'forward_fill', 'backward_fill', or 'average'.")
+    return data
 
 def check_file_format(data, expected_columns):
     """Check if the data has the expected format (columns)."""
@@ -43,13 +48,18 @@ def check_file_format(data, expected_columns):
         print(f"Actual columns: {actual_columns}")
         return False
 
-def process_emission_data(data):
+def process_emission_data(data, missing_data_method='forward_fill'):
     """Process the emission data."""
     df = pd.DataFrame(data['message'])
     inspect_data(df)
     df_sorted = sort_data(df, 'timestamp')
     check_missing_data(df_sorted)
-    df_cleaned = handle_missing_data(df_sorted)
+    
+    # Ensure 'value' column is of type float to correctly recognize NaNs
+    df_sorted['value'] = pd.to_numeric(df_sorted['value'], errors='coerce')
+    
+    check_missing_data(df_sorted)  # Check missing data again after conversion
+    df_cleaned = handle_missing_data(df_sorted, method=missing_data_method)
     expected_columns = ['timestamp', 'value', 'timestamp_readable']
     if check_file_format(df_cleaned, expected_columns):
         df_cleaned = df_cleaned[expected_columns]

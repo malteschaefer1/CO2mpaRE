@@ -1,8 +1,6 @@
-# src/web_scraping.py
-# Code to download emission data from the API.
-
 import requests
-import sqlite3
+import csv
+import os
 from datetime import datetime
 import config  # Assuming CO2_MONITOR_API_KEY is stored in config.py
 
@@ -57,30 +55,21 @@ def get_emission_data(start_date, end_date, dataset='expost', scope='LC', region
         print(f"Error fetching emission data: {e}")
     return None
 
-def save_emission_data_to_sqlite(emission_data, db_file):
-    """Save emission data to SQLite database."""
+def save_emission_data_to_csv(emission_data, csv_file_path):
+    """Save emission data to a CSV file."""
     try:
-        conn = sqlite3.connect(db_file)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS emission_data (
-                timestamp INTEGER PRIMARY KEY,
-                value REAL,
-                timestamp_readable TEXT
-            )
-        ''')
-
-        for entry in emission_data['message']:
-            cursor.execute('''
-                INSERT INTO emission_data (timestamp, value, timestamp_readable)
-                VALUES (?, ?, ?)
-            ''', (entry['timestamp'], entry['value'], entry['timestamp_readable']))
-
-        conn.commit()
-        print(f"Data saved to {db_file} successfully.")
+        with open(csv_file_path, mode='w', newline='') as csv_file:
+            fieldnames = ['timestamp', 'value', 'timestamp_readable']
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            
+            writer.writeheader()
+            for entry in emission_data['message']:
+                writer.writerow({
+                    'timestamp': entry['timestamp'],
+                    'value': entry['value'],
+                    'timestamp_readable': entry['timestamp_readable']
+                })
+        
+        print(f"Data saved to {csv_file_path} successfully.")
     except Exception as e:
-        print(f"Error saving data to SQLite: {e}")
-    finally:
-        if conn:
-            conn.close()
+        print(f"Error saving data to CSV: {e}")
